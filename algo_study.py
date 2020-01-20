@@ -614,28 +614,526 @@ if __name__ == '__main__' :
 
 # ### 12 WILDCARD
 
+# In[64]:
+
+
+#와일드 카드의 처음 오는 글자를 찾는다
+#와일드 카드의 처음 오는 글자 뒤에 아무 것도 없는 경우
+#와일드 카드와 파일이름을 비교한다.
+#맞으면 1
+#틀리면 0
+#와일드 카드의 처음 오는 글자 얖에 기호가 있는 경우(처음부터 확인)
+#와일드 카드와 파일이름을 비교한다.
+#틀리면 0
+#맞으면 아래 실행
+#단어 ?의 경우 파일이름의 글자가 존재하는지 판단한다.
+#*의 경우 뒤에 ?의 수를 세고 *와 파일이름의 글자 사이에 길이가 ?의 수보다 많다면 1
+#아니라면 0
+#와일드 카드의 처음 오는 글자가 없는 경우
+#?의 경우 파일이름의 글자가 존재하는지 판단한다.
+#*의 경우 뒤에 ?의 수를 세고 끝과 파일이름의 글자 사이에 길이가 ?의 수보다 많다면 1
+
+def Input(multi_wild, multi_file_name) :
+    case_num = int(input())
+    for case in range(0, case_num) :
+        multi_wild.append(input())
+        file_name_num = int(input())
+        file_names = list()
+        for file_name in range(0, file_name_num) :
+            file_names.append(input())
+        multi_file_name.append(file_names)
+    return case_num
+
+def search_first_letter(wild) :
+    for index in range(0, len(wild)) :
+        if(wild[index] != '?' and wild[index] != '*') :
+            return index
+    return -1
+
+def search_letter(file_name, target) :
+    index_list = list()
+    for index, letter in enumerate(file_name) :
+        if(letter == target) :
+            index_list.append(index)
+    return index_list
+
+def wild_card(wild, file_name) :
+    first_pos = search_first_letter(wild)
+    
+    #print('wild = ', wild)
+    #print('word = ', file_name)
+    #print('first_pos = ', first_pos)
+    
+    if(len(wild) == 0 and len(file_name) == 0) :
+        return True
+    if(len(wild) == 0) :
+        return False
+    if(first_pos != -1) :
+        equal_list = search_letter(file_name, wild[first_pos])
+        for equal_letter_pos in equal_list :
+            #print('equal_letter_pos = ', equal_letter_pos)
+            res = wild_card(wild[ : first_pos], file_name[ : equal_letter_pos]) and wild_card(wild[first_pos + 1 : ], file_name[equal_letter_pos + 1 : ])
+            if(res == True) :
+                return True
+        return False
+    else :
+        file_name_pos = 0
+        #print('sssss', wild)
+        for index, letter in enumerate(wild) :
+            #print('index = ', index, 'letter = ', letter)
+            if(letter == '?') :
+                if(len(file_name) <= file_name_pos) :
+                    return False
+                else :
+                    file_name_pos += 1
+            elif(letter == '*') :
+                question_mark = 0
+                for search_question in wild[index + 1 : ] :
+                    if(search_question == '?') :
+                        question_mark += 1
+                #print('question_mark : ', question_mark, 'and ', len(file_name) - file_name_pos)
+                if(question_mark <= len(file_name) - file_name_pos) :
+                    return True
+                else : 
+                    return False
+        return wild_card(wild[len(wild) : len(wild)], file_name[file_name_pos : ])
+
+def main() :
+    '''
+    wild = '*bb*'
+    file_name = 'babbc'
+    res = wild_card(wild, file_name)
+    print(res)
+    '''
+    multi_wild = list()
+    multi_file_name = list()
+    case_num = Input(multi_wild, multi_file_name)
+    for case in range(0, case_num) :
+        wild = multi_wild[case]
+        file_names = multi_file_name[case]
+        result = list()
+        for file_name in file_names :
+            res = wild_card(wild, file_name)
+            if(res == True) :
+                result.append(file_name)
+        result.sort()
+        for res in result :
+            print(res)
+
+if __name__ == '__main__' :
+    main()
+
+
+# ### 13 TRIANGLE PATH
+
+# In[26]:
+
+
+#꼭대기에서 시작
+#자기 랑 리턴 값 더하기
+#최대값 고르기
+#아래 찾기
+#오른쪽 아래 찾기
+#맨끝 도착하면 현재 값 리턴
+
+board = list()
+cache = list()
+
+def Input(multi_board) :
+    case_num = int(input())
+    for case in range(0, case_num) :
+        line = int(input())
+        board_line = list()
+        for num in range(0, line) :
+            board_line.append(input().split(" "))
+        multi_board.append(board_line)
+    return case_num
+
+
+def init_cache() :
+    global cache
+    cache = list()
+    for row in range(0, len(board)) :
+        temp_row = list()
+        for col in range(0, len(board[row])) :
+            temp_row.append(-1)
+        cache.append(temp_row)
+
+def search_max_path(depth, col) :
+    global cache
+    if(depth == len(board)) :
+        return 0
+    if(cache[depth][col] != -1) :
+        return cache[depth][col]
+    ret = int(board[depth][col]) + max(search_max_path(depth + 1, col) , search_max_path(depth + 1, col + 1))
+    cache[depth][col] = ret
+    return ret
+
+
+def main() :
+    global board
+    #board = [[6],[1,2],[3,7,4],[8,4,1,7],[2,7,5,8,4]]
+    multi_board = list()
+    case_num = Input(multi_board)
+    for case in range(0, case_num) :
+        board = multi_board[case]
+        init_cache()
+        res = search_max_path(0,0)
+        print(res)
+    
+if __name__ == '__main__' :
+    main()
+
+
+# ### 14 LIS
+
+# In[83]:
+
+
+#추가 할 경우 최대길이 메모제이션
+#2^n
+
+cache = list()
+
+def Input(multi_sequence) :
+    case_num = int(input())
+    for case in range(0, case_num) :
+        size = int(input())
+        multi_sequence.append(input().split(" "))
+    return case_num
+
+def init_cache() :
+    global cache
+    cache = list()
+    for size in range(0, len(sequence)) :
+        number = list()
+        for is_include in range(0, 2) :
+            number.append(-1)
+        cache.append(number)
+
+
+def search_lis(sequence) :
+    if(len(sequence) == 0) :
+        return 0
+    prev = 0
+    for start in range(0, len(sequence)) :
+        new_sequence = list()
+        for index, number in enumerate(sequence[start + 1:]) :
+            if(sequence[start] < number) :
+                new_sequence.append(number)
+        cur = search_lis(new_sequence)
+        cache[start] = cur
+        ret = 1 + max(prev, cur)
+        #print('ret = ', ret)
+        prev = max(prev, cur)
+    return ret
+
+def main() :
+    global sequence
+    sequence = [1,2,3,1,5,6,7]
+    print(search_lis(sequence))
+    '''
+    multi_sequence = list()
+    case_num = Input(multi_sequence)
+    for case in range(0, case_num) :
+        sequence = multi_sequence[case]
+        init_cache()
+        res = search_lis(0,0)
+        print(res)
+    '''
+if __name__ == '__main__' :
+    main()
+
+
+# ### 15 백준 알고리즘 1024(EASY)
+
+# In[92]:
+
+
+board =[[0,2,4],[0,4,4],[2,0,2]]
+
+def search_max_block() :
+    max_block = 0 
+    for row in range(0, len(board)) :
+        for col in range(0, len(board)) :
+            max_block = max(max_block, board[row][col])
+    return max_block
+
+def edit_blank() :
+     
+
+def move(row_start, row_end, col_start, col_end) :
+    global board
+    prev = 0
+    d_row = [0,1]
+    #오른쪽으로 움직였을 때
+    for row in range(row_start, row_end) :
+        for col in range(col_start, col_end) :
+            dy = direct[0] * row 
+            if(board[row][col] != 0) :
+                if(board[row][col] == board[row][prev]) :
+                    board[row][prev] *= 2
+                    board[row][col] = 0
+                prev = col
+        for col in range(0, len(board)) :
+            if(board[row][cur] == 0) :
+                del board[row][cur]
+                board[row].insert(0,0)
+
+
+def easy_1024() :
+    global board
+    prev = 0
+    d_row = [[0,1]]
+    d_col = [[1,0]]
+    #오른쪽으로 움직였을 때
+    for row in range(0, len(board)) :
+        for col in range(0, len(board)) :
+            dy = row * d_row[direct][0] + col * d_col[direct][0]
+            dx = row * d_row[direct][1] + col * d_col[direct][1]
+            cur = len(board) - col - 1
+            if(board[row][cur] != 0) :
+                if(board[row][cur] == board[row][prev]) :
+                    board[row][prev] *= 2
+                    board[row][cur] = 0
+                prev = cur
+        for cur in range(0, len(board)) :
+            if(board[row][cur] == 0) :
+                    del board[row][cur]
+                    board[row].insert(0,0)
+    return search_max_block()
+
+                
+def main() :
+    res = easy_1024()
+    print(board)
+    print('max_value = ', res)
+    
+if __name__ == '__main__' :
+    main()
+
+
+# ### 16 백준 알고리즘 주사위 굴리기
+
 # In[ ]:
 
 
-def wild_card() :
-    if(index >= length) :
-        return False
-    if(wild_letter != '?' and wild_letter != '*') :
-        if(wild_letter == word_letter) :
-            return True
+#입력 받으면 입력 받은 방향으로 움직인다.
+#움직인 방향대로 주사위 값 들을 민다.
+#이동한 칸이 0이 아닐 경우
+#주사위 값을 이동한 칸 값으로 바꾸고 이동한 칸을 0으로 바꾼다.
+#이동한 칸이 0일 경우
+#이동한 칸은 주사위 값으로 변한다.
+#보드를 벋어난다면 롤백한다.
+#가로 [왼쪽, 본인, 오른쪽]
+#세로 [위, 본인, 아래]
+#맞은편 int
+
+def Input() :
+    temp_input = input().split(' ')
+    row_size = int(temp_input[0])
+    row = int(temp_input[2])
+    col = int(temp_input[3])
+    direct_num = int(temp_input[4])
+    board = list()
+    for row_value in range(0, row_size) :
+        row_input = input().split(' ')
+        temp_row = list()
+        for col_value in row_input :
+            temp_row.append(int(col_value))
+        board.append(temp_row)
+    direct_input = input().split(' ')
+    direct_list = list()
+    for direct in direct_input :
+        direct_list.append(int(direct))
+    return (row, col, board, direct_list)
+
+def dice(index, delta, move_axis, follow, opp) :
+    if (index + delta) in range(0, 3) :
+        move_axis[index] = move_axis[index + delta]
+    else :
+        move_axis[index] = opp
+        follow[1] = move_axis[1]
+
+        
+def play(hor, ver, opp, direct, board, row, col) :
+    hor_delta = [1, -1, 0, 0]
+    ver_delta = [0, 0, 1, -1]
+    start_list = [0, 2]
+    end_list = [3, -1]
+    loop_delta_list = [1, -1]
+    dx = hor_delta[direct - 1]
+    dy = ver_delta[direct - 1]
+    loop_index = 1 - (direct % 2)
+    start = start_list[loop_index]
+    end = end_list[loop_index]
+    loop_delta = loop_delta_list[loop_index]
+    temp_opp = [hor[start], ver[start]]
+    if (row + dy * -1 in range(0, len(board))) and (col + dx in range(0, len(board[0]))) :
+        for index in range(start, end, loop_delta) :
+            dice(index, dx, hor, ver, opp)
+            dice(index, dy, ver, hor, opp)
+        if board[row + dy * -1][col + dx] != 0 :
+            hor[1] = board[row + dy * -1][col + dx]
+            ver[1] = board[row + dy * -1][col + dx]
+            board[row + dy * -1][col + dx] = 0
         else :
-            return False
+            board[row + dy * -1][col + dx] = hor[1]
+        return (row + dy * -1, col + dx, temp_opp[int((direct-1) / 2)])
+    else :
+        return (row, col, opp)
         
-    if(wild_letter == '?') :
         
-    if(wild_letter == '*') :
+def main() :
+    #board = [[0,2], [3,4],[5,6],[7,8]]
+    hor = [0, 0, 0]
+    ver = [0, 0, 0]
+    opp = 0
+    [row, col, board, direct_list] = Input()
+    #[row, col, board, direct_list] = [0, 0, [[0,2], [3,4],[5,6],[7,8]], [4,4,4,4,3,3,3,2]]
+    for direct in direct_list :
+        res = play(hor, ver, opp, direct, board, row, col)
+        if res != (row, col, opp) :
+            print(res[2])
+            [row, col, opp] = res
+if __name__ == '__main__' :
+    main()
+    
+    
 
 
-# # 못 푼 문제 9,10
+# ### 17 백준 알고리즘 테트로미노
+
+# In[57]:
+
+
+# 시간초과 : 아니 예외처리로 경우도 줄였는데 왜 안되!!!
+
+
+def Input() :
+    row_col = input().split(' ')
+    row_size = int(row_col[0])
+    board = list()
+    for row_num in range(0, row_size) :
+        row_valus = input().split(' ')
+        col_list = list()
+        for col_value in row_valus :
+            col_list.append(int(col_value))
+        board.append(col_list)
+    return board
+    
+def check_block(board, y, x) :
+    block_row = [[1,2,3],[0,0,0],[1,1,1],[1,2,2],[0,1,1],[1,1,2],[1,1,1],[1,1,2], [0, 1, 1],[1,2,2],[0,1,2],[0,0,1],[0,0,1],[0,1,2],[1,1,1],[1,1,2],[0,1,1],[1,1,2],[0,0,1]]
+    block_col = [[0,0,0],[1,2,3],[-2,-1,0],[0,0,-1],[1,-1,0],[-1,0,-1],[-1,0,1],[-1,0,0], [1, 0, 1],[0,0,1],[1,1,1],[1,2,0],[1,2,2],[1,0,0],[0,1,2],[0,1,1],[1,1,2],[0,1,0],[1,2,1]]
+    center = board[y][x]
+    sum_val = center
+    max_val = 0
+    block_num = 0
+    while  block_num < len(block_row) :
+        rows = block_row[block_num]
+        cols = block_col[block_num]
+        for index in range(0, 3) :
+            dy = y + rows[index]
+            dx = x + cols[index]
+            if dy in range(0, len(board)) and dx in range(0, len(board[0])) :
+                sum_val += board[dy][dx]
+            elif block_num == 1 :
+                block_row = block_row[0:8]
+                block_col = block_col[0:8]
+            elif block_num == 2 :
+                block_row = block_row[0:3] + block_row[8:]
+                block_col = block_col[0:3] + block_col[8:]
+        max_val = max(max_val, sum_val)
+        sum_val = center
+        block_num += 1
+    return max_val
+    
+    
+def main() :
+    #board = [[1, 2, 3, 4, 5],[5, 4, 3, 2, 1],[2, 3, 4, 5, 6],[6, 5, 4, 3, 2],[1, 2, 1, 2, 1]]
+    #board = [[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5]]
+    #board = [[1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1]]
+    board = Input()
+    max_value = 0
+    for row_num in range(0, len(board) - 1) :
+        for col_num in range(0, len(board[0])) :
+            ret = check_block(board, row_num, col_num)
+            max_value = max(max_value, ret)
+    for col_num in range(0, max(len(board[0]) - 3, 0)) :
+        ret = board[len(board) - 1][col_num] + board[len(board) - 1][col_num + 1] + board[len(board) - 1][col_num + 2]+ board[len(board) - 1][col_num + 3] 
+        max_value = max(max_value, ret)
+    print(max_value)
+    
+if __name__ == '__main__' :
+    main()
+    
+        
+    
+
+
+# ### 18 백준 알고리즘 퇴사
+
+# In[45]:
+
+
+cache = list()
+leave = 0
+
+def Input() :
+    global leave
+    leave = int(input())
+    time = list()
+    price = list()
+    for day in range(0, leave) :
+        time_price = input().split(' ')
+        time.append(int(time_price[0]))
+        price.append(int(time_price[1]))
+    return (time, price)
+
+def init_cache() :
+    for num in range(0, leave) :
+        cache.append(-1)
+
+def consul(time, price) :
+    global cache
+    if len(time) == 0 :
+        return 0
+    if cache[leave - len(time)] != -1 :
+        return cache[leave - len(time)]
+    max_ret = 0
+    for n in range(0, len(time)) :
+        if n + time[n] <= len(time) :
+            ret = price[n] + consul(time[n + time[n] : ], price[n + time[n] : ])
+            max_ret = max(max_ret, ret)
+    cache[leave - len(time)] = max_ret
+    return max_ret
+
+
+def main() :
+    #time = [3, 5, 1, 1, 2, 4, 2]
+    #price = [10, 20, 10, 20, 15, 40, 200]
+    #time = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    #price = [1,2,3,4,5,6,7,8,9,10]
+    [time, price] = Input()
+    init_cache()
+    res = consul(time, price)
+    print(res)
+    
+if __name__ == '__main__' :
+    main()
+
+
+# In[ ]:
+
+
+
+
+
+# # 못 푼 문제 9,10, 14, 백준 17
 
 # ### D.Q 
 # + #### 계속해서 나누기
-# + ####가장 작은 문제 푸는걸 나눈거 마다 반복하기
+# + #### 가장 작은 문제 푸는걸 나눈거 마다 반복하기
 # 
 # ### D.P
 # + #### B.F로 풀기
