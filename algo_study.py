@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# 
+
 # ## 프로그래밍 대회에서 배우는 알고리즘 문제해결전략 1
 # ## algospot
 
@@ -787,7 +787,7 @@ if __name__ == '__main__' :
 
 # ### 14 LIS
 
-# In[83]:
+# In[71]:
 
 
 #추가 할 경우 최대길이 메모제이션
@@ -806,114 +806,186 @@ def init_cache() :
     global cache
     cache = list()
     for size in range(0, len(sequence)) :
-        number = list()
-        for is_include in range(0, 2) :
-            number.append(-1)
-        cache.append(number)
+        cache.append(-1)
 
 
-def search_lis(sequence) :
-    if(len(sequence) == 0) :
+def search_lis(sequence, start) :
+    #print('start = ',start)
+    if sequence == [''] :
         return 0
-    prev = 0
-    for start in range(0, len(sequence)) :
-        new_sequence = list()
-        for index, number in enumerate(sequence[start + 1:]) :
-            if(sequence[start] < number) :
-                new_sequence.append(number)
-        cur = search_lis(new_sequence)
-        cache[start] = cur
-        ret = 1 + max(prev, cur)
-        #print('ret = ', ret)
-        prev = max(prev, cur)
-    return ret
+    if len(sequence) - 1 == start :
+        return 1
+    global cache
+    if cache[start] != -1 :
+        return cache[start]
+    ret = 0
+    #print(a)
+    for index in range(start + 1, len(sequence)) :
+        if int(sequence[start]) < int(sequence[index]) :
+            ret = max(ret, search_lis(sequence, index))
+    ret += 1
+    cache[start] = ret
+    return ret 
 
 def main() :
     global sequence
-    sequence = [1,2,3,1,5,6,7]
-    print(search_lis(sequence))
+    '''
+    sequence = list()
+    for b in range(0, 1000) :
+            sequence.append(b + 1)
+    #print(sequence, len(sequence))
+    #sequence = [9, 1, 3, 7, 5, 6, 20]
+    init_cache()
+    res = 0
+    #for start in range(0, len(sequence)) :
+    res = max(res, search_lis(sequence, 0))
+    print('res = ', res)
+    #print(cache)
+
     '''
     multi_sequence = list()
     case_num = Input(multi_sequence)
     for case in range(0, case_num) :
         sequence = multi_sequence[case]
+        #print(sequence)
         init_cache()
-        res = search_lis(0,0)
+        res = 0
+        for start in range(0, len(sequence)) :
+            res = max(res, search_lis(sequence, start))
         print(res)
-    '''
+    
+    #'''
 if __name__ == '__main__' :
     main()
 
 
 # ### 15 백준 알고리즘 1024(EASY)
 
-# In[92]:
+# In[59]:
 
 
-board =[[0,2,4],[0,4,4],[2,0,2]]
+import copy
 
-def search_max_block() :
+def Input() :
+    line_num = int(input())
+    board = list()
+    for line in range(0, line_num) :
+        temp_line = list()
+        for letter in input().split(" ") :
+            temp_line.append(int(letter))
+        board.append(temp_line)
+    return board
+
+def search_max_block(board) :
     max_block = 0 
     for row in range(0, len(board)) :
         for col in range(0, len(board)) :
             max_block = max(max_block, board[row][col])
     return max_block
 
-def edit_blank() :
-     
-
-def move(row_start, row_end, col_start, col_end) :
-    global board
-    prev = 0
-    d_row = [0,1]
-    #오른쪽으로 움직였을 때
-    for row in range(row_start, row_end) :
-        for col in range(col_start, col_end) :
-            dy = direct[0] * row 
+#up = 0, right = 1, down = 2, left = 3
+def move(board, direct, loop) :
+    if(loop == 5) :
+        return search_max_block(board)
+    start = [0, len(board) - 1, len(board) - 1, 0]
+    end = [len(board), -1,-1, len(board)]
+    delta = [1, -1, -1, 1]
+    up_down = [1,0,1,0]
+    #움직였을 때
+    for x in range(start[direct], end[direct], delta[direct]):
+        pos_x = start[direct] - delta[direct]
+        pos_y = start[direct] - delta[direct]
+        cursor = 0
+        for y in range(start[direct], end[direct], delta[direct]) :
+            row_dir= [y, x, y, x]
+            col_dir = [x, y, x, y]
+            [row, col] = [row_dir[direct], col_dir[direct]]
+            #print(row, col)
             if(board[row][col] != 0) :
-                if(board[row][col] == board[row][prev]) :
-                    board[row][prev] *= 2
+                if((0 <= pos_x and pos_x < len(board)) and cursor == board[row][col]) :
+                    board[pos_y][pos_x] *= 2
                     board[row][col] = 0
-                prev = col
-        for col in range(0, len(board)) :
-            if(board[row][cur] == 0) :
-                del board[row][cur]
-                board[row].insert(0,0)
+                    cursor = -1
+                else : 
+                    pos_y = up_down[direct] * (pos_y + delta[direct]) + (1 - up_down[direct]) * row
+                    pos_x = (1 - up_down[direct]) * (pos_x + delta[direct]) + up_down[direct] * col
+                    temp = board[pos_y][pos_x]
+                    board[pos_y][pos_x] = board[row][col]
+                    board[row][col] = temp
+                    cursor = board[pos_y][pos_x]
+    loop += 1
+    up_board = copy.deepcopy(board)
+    up = move(up_board, 0, loop)
+    right_board = copy.deepcopy(board)
+    right = move(right_board, 1, loop)
+    down_board = copy.deepcopy(board)
+    down = move(down_board, 2, loop)
+    left_board = copy.deepcopy(board)
+    left = move(left_board, 3, loop)
+    return max(max(up, down), max(right, left))
 
-
-def easy_1024() :
-    global board
-    prev = 0
-    d_row = [[0,1]]
-    d_col = [[1,0]]
-    #오른쪽으로 움직였을 때
-    for row in range(0, len(board)) :
-        for col in range(0, len(board)) :
-            dy = row * d_row[direct][0] + col * d_col[direct][0]
-            dx = row * d_row[direct][1] + col * d_col[direct][1]
-            cur = len(board) - col - 1
-            if(board[row][cur] != 0) :
-                if(board[row][cur] == board[row][prev]) :
-                    board[row][prev] *= 2
-                    board[row][cur] = 0
-                prev = cur
-        for cur in range(0, len(board)) :
-            if(board[row][cur] == 0) :
-                    del board[row][cur]
-                    board[row].insert(0,0)
-    return search_max_block()
-
-                
 def main() :
-    res = easy_1024()
-    print(board)
-    print('max_value = ', res)
+    board = Input()
+    up_board = copy.deepcopy(board)
+    up = move(up_board, 0, 0)
+    right_board = copy.deepcopy(board)
+    right = move(right_board, 1, 0)
+    down_board = copy.deepcopy(board)
+    down = move(down_board, 2, 0)
+    left_board = copy.deepcopy(board)
+    left = move(left_board, 3, 0)
+    res = max(max(up, down), max(right, left))
+    print(res)
     
 if __name__ == '__main__' :
     main()
 
 
-# ### 16 백준 알고리즘 주사위 굴리기
+# ### 16 백준 알고리즘 시험 감독
+
+# In[76]:
+
+
+#rooms = [1000000, 1000000, 1000000, 1000000, 1000000]
+#prim = 5
+#sub = 7
+def cal_supervisor(rooms, prime, sub) :
+    supervisor = 0
+    for room in rooms :
+        room = room - prime
+        supervisor += 1
+        if(room > 0) :
+            div = room / sub
+            if(div - int(div) > 0) :
+                rem = 1
+            else :
+                rem = 0
+            supervisor += int(div) + rem
+    return supervisor
+
+
+def Input() :
+    room_num = int(input())
+    rooms = list()
+    for room in input().split(' ') :
+        rooms.append(int(room))
+    supervisor_ability = input().split(' ')
+    prime = int(supervisor_ability[0])
+    sub = int(supervisor_ability[1])
+    return (rooms, prime, sub)
+
+
+
+def main() :
+    [rooms, prime, sub] = Input()
+    res = cal_supervisor(rooms, prime, sub)
+    print(res)
+    
+if __name__ == '__main__' :
+    main()
+
+
+# ### 17 백준 알고리즘 주사위 굴리기
 
 # In[ ]:
 
@@ -998,17 +1070,26 @@ def main() :
             [row, col, opp] = res
 if __name__ == '__main__' :
     main()
-    
-    
 
 
-# ### 17 백준 알고리즘 테트로미노
+# ### 18 백준 알고리즘 테트로미노
 
-# In[57]:
+# In[1]:
 
 
-# 시간초과 : 아니 예외처리로 경우도 줄였는데 왜 안되!!!
+# 처음에 모든 블록을 배열로 만들어서 bfs로 품
+# 시간초과
+# 재귀함수로 품
+# 잎이 4개(상하좌우)고 4번 반복(준호형이 알려줌ㅠㅠ)
 
+#깊이가 4면 리턴 0
+#범위 벗어나면 -4000리턴
+#이외의 경우
+#상하좌우 리턴
+#이중 최대값 구하고
+#자신과 최대값 구하고 리턴
+
+cache = list()
 
 def Input() :
     row_col = input().split(' ')
@@ -1021,7 +1102,59 @@ def Input() :
             col_list.append(int(col_value))
         board.append(col_list)
     return board
+
+def init_cache(row_size, col_size) :
+    global cache
+    for depth_num in range(0, 4) :
+        cache.append(list())
+        for row_num in range(0, row_size) :
+            cache[depth_num].append(list())
+            for col_num in range(0, col_size) :
+                cache[depth_num][row_num].append(list())
+                for direct in range(0, 4) :
+                    cache[depth_num][row_num][col_num].append(-1)
+            
+        
+def check_block(board, row, col, depth, direct) :
+    if depth == 4 :
+        return 0
+    if not(row in range(0, len(board))) or not(col in range(0, len(board[0])))or board[row][col] == -4000 :
+        return -4000
+    global cache
+    if cache[depth][row][col][direct] != -1:
+        return cache[depth][row][col][direct]
+    import copy
+    new_board = copy.deepcopy(board)
+    new_board[row][col] = -4000
+    right = check_block(new_board, row, col + 1, depth + 1, 0)
+    left = check_block(new_board, row, col - 1, depth + 1, 1)
+    down = check_block(new_board, row + 1, col, depth + 1, 2)
+    up = check_block(new_board, row - 1, col, depth + 1, 3)
+    ret = board[row][col] + max(max(right, left), max(up, down))
+    print(ret, row, col, depth)
+    cache[depth][row][col][direct] = ret
+    return ret
+
+def main() :
+    #board = [[1,2,3,4,5]]
+    #board = [[1, 2, 3, 4, 5],[5, 4, 3, 2, 1],[2, 3, 4, 5, 6],[6, 5, 4, 3, 2],[1, 2, 1, 2, 1]]
+    #board = [[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5]]
+    #board = [[1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1]]
+    board = [[2,1],[1,2],[2,1]]
+    #board = Input()
+    init_cache(len(board), len(board[0]))
+    max_value = 0
+    for row_y in range(0, len(board)) :
+        for col_x in range(0, len(board[0])) :
+            ret = check_block(board, row_y, col_x, 0, 0)
+            max_value = max(max_value, ret)
+    print(max_value)
     
+if __name__ == '__main__' :
+    main()
+    
+        
+'''    
 def check_block(board, y, x) :
     block_row = [[1,2,3],[0,0,0],[1,1,1],[1,2,2],[0,1,1],[1,1,2],[1,1,1],[1,1,2], [0, 1, 1],[1,2,2],[0,1,2],[0,0,1],[0,0,1],[0,1,2],[1,1,1],[1,1,2],[0,1,1],[1,1,2],[0,0,1]]
     block_col = [[0,0,0],[1,2,3],[-2,-1,0],[0,0,-1],[1,-1,0],[-1,0,-1],[-1,0,1],[-1,0,0], [1, 0, 1],[0,0,1],[1,1,1],[1,2,0],[1,2,2],[1,0,0],[0,1,2],[0,1,1],[1,1,2],[0,1,0],[1,2,1]]
@@ -1037,43 +1170,16 @@ def check_block(board, y, x) :
             dx = x + cols[index]
             if dy in range(0, len(board)) and dx in range(0, len(board[0])) :
                 sum_val += board[dy][dx]
-            elif block_num == 1 :
-                block_row = block_row[0:8]
-                block_col = block_col[0:8]
-            elif block_num == 2 :
-                block_row = block_row[0:3] + block_row[8:]
-                block_col = block_col[0:3] + block_col[8:]
         max_val = max(max_val, sum_val)
         sum_val = center
         block_num += 1
     return max_val
-    
-    
-def main() :
-    #board = [[1, 2, 3, 4, 5],[5, 4, 3, 2, 1],[2, 3, 4, 5, 6],[6, 5, 4, 3, 2],[1, 2, 1, 2, 1]]
-    #board = [[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5]]
-    #board = [[1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2], [2, 1, 2, 1, 2, 1, 2, 1, 2, 1]]
-    board = Input()
-    max_value = 0
-    for row_num in range(0, len(board) - 1) :
-        for col_num in range(0, len(board[0])) :
-            ret = check_block(board, row_num, col_num)
-            max_value = max(max_value, ret)
-    for col_num in range(0, max(len(board[0]) - 3, 0)) :
-        ret = board[len(board) - 1][col_num] + board[len(board) - 1][col_num + 1] + board[len(board) - 1][col_num + 2]+ board[len(board) - 1][col_num + 3] 
-        max_value = max(max_value, ret)
-    print(max_value)
-    
-if __name__ == '__main__' :
-    main()
-    
-        
-    
+'''
 
 
-# ### 18 백준 알고리즘 퇴사
+# ### 19 백준 알고리즘 퇴사
 
-# In[45]:
+# In[ ]:
 
 
 cache = list()
@@ -1123,12 +1229,6 @@ if __name__ == '__main__' :
     main()
 
 
-# In[ ]:
-
-
-
-
-
 # # 못 푼 문제 9,10, 14, 백준 17
 
 # ### D.Q 
@@ -1138,3 +1238,4 @@ if __name__ == '__main__' :
 # ### D.P
 # + #### B.F로 풀기
 # + #### 반복되는걸 저장해서 계산 축소(memoization)
+# + #### 경우의 수를 군살없이 설계하면 안된다. 오히려 군살 많이 붙여서 메모제이션하자! <- 이게 훨씬 빠름, 시간초과가 나온다면 이걸 생각해볼 것
