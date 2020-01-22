@@ -787,7 +787,7 @@ if __name__ == '__main__' :
 
 # ### 14 LIS
 
-# In[71]:
+# In[83]:
 
 
 #추가 할 경우 최대길이 메모제이션
@@ -806,55 +806,41 @@ def init_cache() :
     global cache
     cache = list()
     for size in range(0, len(sequence)) :
-        cache.append(-1)
+        number = list()
+        for is_include in range(0, 2) :
+            number.append(-1)
+        cache.append(number)
 
 
-def search_lis(sequence, start) :
-    #print('start = ',start)
-    if sequence == [''] :
+def search_lis(sequence) :
+    if(len(sequence) == 0) :
         return 0
-    if len(sequence) - 1 == start :
-        return 1
-    global cache
-    if cache[start] != -1 :
-        return cache[start]
-    ret = 0
-    #print(a)
-    for index in range(start + 1, len(sequence)) :
-        if int(sequence[start]) < int(sequence[index]) :
-            ret = max(ret, search_lis(sequence, index))
-    ret += 1
-    cache[start] = ret
-    return ret 
+    prev = 0
+    for start in range(0, len(sequence)) :
+        new_sequence = list()
+        for index, number in enumerate(sequence[start + 1:]) :
+            if(sequence[start] < number) :
+                new_sequence.append(number)
+        cur = search_lis(new_sequence)
+        cache[start] = cur
+        ret = 1 + max(prev, cur)
+        #print('ret = ', ret)
+        prev = max(prev, cur)
+    return ret
 
 def main() :
     global sequence
-    '''
-    sequence = list()
-    for b in range(0, 1000) :
-            sequence.append(b + 1)
-    #print(sequence, len(sequence))
-    #sequence = [9, 1, 3, 7, 5, 6, 20]
-    init_cache()
-    res = 0
-    #for start in range(0, len(sequence)) :
-    res = max(res, search_lis(sequence, 0))
-    print('res = ', res)
-    #print(cache)
-
+    sequence = [1,2,3,1,5,6,7]
+    print(search_lis(sequence))
     '''
     multi_sequence = list()
     case_num = Input(multi_sequence)
     for case in range(0, case_num) :
         sequence = multi_sequence[case]
-        #print(sequence)
         init_cache()
-        res = 0
-        for start in range(0, len(sequence)) :
-            res = max(res, search_lis(sequence, start))
+        res = search_lis(0,0)
         print(res)
-    
-    #'''
+    '''
 if __name__ == '__main__' :
     main()
 
@@ -1229,6 +1215,121 @@ if __name__ == '__main__' :
     main()
 
 
+# ### 20 구슬 탈출 2
+
+# In[9]:
+
+
+# 벽# 길. 빨간 구슬 R,파란 구슬 B, 구멍 O
+# 구슬을 오른쪽, 아래, 왼쪽, 위쪽 순서로 굴림
+# 굴리는건 swap으로 굴림
+# 구슬끼리 부딫치는걸 대비해서 두번씩 굴림
+# 한 번 굴릴 때마다 재귀 호출
+# 무조건 10번 안에 결판이 난다는 가정하에 했었음, 근데 맞은거 보니 무조건 10번안에 결판 나오나봄
+
+cache = list()
+
+def Input() :
+    row_col = input()
+    row_size = int(row_col.split(' ')[0])
+    col_size = int(row_col.split(' ')[1])
+    temp_board = list()
+    for row_num in range(0, row_size) :
+        temp_board.append(input())
+    board = list()
+    for i in range(0, row_size) :
+        board.append(list())
+        for j in range(0, col_size) :
+            board[i].append(temp_board[i][j])
+    return board
+
+def move(board, row, col, direct) :
+    delta_row = [0, 1, 0, -1]
+    delta_col = [1, 0 ,-1, 0]
+    dy = delta_row[direct]
+    dx = delta_col[direct]
+    if board[row][col] == 'O' :
+        return (row, col, 2)
+    for i in range(0, max(len(board), len(board[0]))) :
+        next_cell = board[row + dy][col + dx]
+        if next_cell == '.' :
+            temp = next_cell
+            board[row + dy][col + dx] = board[row][col]
+            board[row][col] = temp
+            row = row + dy
+            col = col + dx
+        elif next_cell == '#' : 
+            return (row, col, 0)
+        elif next_cell == 'O' :
+            board[row][col] = '.'
+            row = row + dy
+            col = col + dx
+            return (row, col, 2)
+        else  :
+            return (row, col, 1)
+import copy
+
+def ball_game2(board, red_row, red_col, blue_row, blue_col, attempt) :
+    if board[blue_row][blue_col] == 'O' :
+        return 1000
+    if board[red_row][red_col] == 'O' :
+        return attempt - 1 # 시도 횟수 출력
+    if attempt == 11 :
+        return 100
+    global cache
+    if cache[attempt - 1][red_row][red_col][blue_row][blue_col] != -1 :
+        return cache[attempt - 1][red_row][red_col][blue_row][blue_col]
+    ret = [1000, 1000, 1000, 1000]
+    attempt += 1
+    for direct in range(0,4):
+        new_board = copy.deepcopy(board)
+        [new_red_row, new_red_col, red_ret] = move(new_board, red_row, red_col, direct)
+        [new_blue_row, new_blue_col, blue_ret] = move(new_board, blue_row, blue_col, direct)
+        [new_red_row, new_red_col, red_ret] = move(new_board, new_red_row, new_red_col, direct)
+        [new_blue_row, new_blue_col, blue_ret] = move(new_board, new_blue_row, new_blue_col, direct)
+        ret[direct] = ball_game2(new_board, new_red_row, new_red_col, new_blue_row, new_blue_col, attempt)
+    final_ret = min(min(ret[0], ret[1]), min(ret[2], ret[3]))
+    cache[attempt - 2][red_row][red_col][blue_row][blue_col] = final_ret
+    return final_ret
+
+def search_ball(board) :
+    for row in range(0, len(board)) :
+        for col in range(0, len(board[0])) :
+            if board[row][col] == 'R' :
+                red_row, red_col = row, col
+            elif board[row][col] == 'B' :
+                blue_row, blue_col = row, col
+    return red_row, red_col, blue_row, blue_col
+
+def init_cache(row_size, col_size) :
+    global cache
+    cache =  list()
+    for depth in range(0, 10) :
+        cache.append(list())
+        for r_row in range(0, row_size) :
+            cache[depth].append(list())
+            for r_col in range(0, col_size) :
+                cache[depth][r_row].append(list())
+                for b_row in range(0, row_size) :
+                    cache[depth][r_row][r_col].append(list())
+                    for b_col in range(0, col_size) :
+                        cache[depth][r_row][r_col][b_row].append(-1)
+
+def main() :
+    board = Input()
+    init_cache(len(board), len(board[0]))
+    red_row, red_col, blue_row, blue_col = search_ball(board)
+    res = ball_game2(board, red_row, red_col, blue_row, blue_col, 1)
+    if res == 100 :
+        print('-1')
+    else :
+        print(res)
+        
+if __name__ == '__main__' :
+    main()
+    
+
+
 # # 못 푼 문제 9,10, 14, 백준 17
 
 # ### D.Q 
@@ -1238,4 +1339,3 @@ if __name__ == '__main__' :
 # ### D.P
 # + #### B.F로 풀기
 # + #### 반복되는걸 저장해서 계산 축소(memoization)
-# + #### 경우의 수를 군살없이 설계하면 안된다. 오히려 군살 많이 붙여서 메모제이션하자! <- 이게 훨씬 빠름, 시간초과가 나온다면 이걸 생각해볼 것
