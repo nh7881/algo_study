@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+# 
 # ## 프로그래밍 대회에서 배우는 알고리즘 문제해결전략 1
 # ## algospot
 
